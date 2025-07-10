@@ -2,6 +2,12 @@
 
 Una aplicación web moderna de Pokédex construida con React, TypeScript y Vite. Explora y descubre todos los Pokémon del mundo con una interfaz intuitiva y funcionalidades como búsqueda, paginación y captura de Pokémon.
 
+## 🌐 Live Demo
+
+**¡Prueba la aplicación ahora!** → [Ver Demo](https://pokedex-one-drab-93.vercel.app/)
+
+---
+
 ## ✨ Características
 
 - 🔍 **Búsqueda de Pokémon**: Busca Pokémon por nombre en tiempo real
@@ -36,6 +42,8 @@ npm --version
 ```
 
 ## 🛠️ Instalación
+
+> 💡 **Tip**: ¿Quieres ver la aplicación funcionando antes de instalarla? [Ver Demo](https://pokedex-one-drab-93.vercel.app/)
 
 1. **Clona el repositorio**
 
