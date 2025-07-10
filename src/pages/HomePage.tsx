@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PokemonCard } from '../components/ui/PokemonCard';
-import { getPokemonList, getAllPokemon } from '../services/pokemonApi';
+import { getPokemonList, getAllPokemonBasic } from '../services/pokemonApi';
 
 export const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 20;
   const offset = currentPage * limit;
@@ -17,29 +18,46 @@ export const HomePage = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
   
-  // Query para búsqueda global (solo se activa cuando hay búsqueda)
-  const { data: allPokemon, isLoading: isLoadingAll, error: errorAll, refetch: refetchAll } = useQuery({
-    queryKey: ['all-pokemon'],
-    queryFn: getAllPokemon,
+  // Query para búsqueda básica (solo nombres, 1 sola llamada)
+  const { data: allPokemonBasic, isLoading: isLoadingBasic, error: errorBasic, refetch: refetchBasic } = useQuery({
+    queryKey: ['all-pokemon-basic'],
+    queryFn: getAllPokemonBasic,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     enabled: false, // No se ejecuta automáticamente
   });
 
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Determinar qué datos usar basado en si hay búsqueda o no
-  const isSearching = searchTerm.trim().length > 0;
-  const isLoading = isSearching ? isLoadingAll : isLoadingPaginated;
-  const error = isSearching ? errorAll : errorPaginated;
+  const isSearching = debouncedSearchTerm.trim().length > 0;
+  const error = isSearching ? errorBasic : errorPaginated;
 
   // Filtrar Pokémon basado en la búsqueda
   const filteredPokemon = useMemo(() => {
-    if (isSearching && allPokemon) {
-      return allPokemon.filter(pokemon =>
-        pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())
+    if (isSearching && allPokemonBasic) {
+      // Filtrar por nombre en la lista básica
+      const filteredBasic = allPokemonBasic.filter(pokemon =>
+        pokemon.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
+      
+      // Convertir a formato compatible con PokemonCard
+      return filteredBasic.map(pokemon => ({
+        id: pokemon.id,
+        name: pokemon.name,
+        image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${pokemon.id}.svg`,
+        types: [] // Los tipos se cargarán cuando sea necesario
+      }));
     }
     return paginatedPokemon || [];
-  }, [isSearching, allPokemon, paginatedPokemon, searchTerm]);
+  }, [isSearching, allPokemonBasic, paginatedPokemon, debouncedSearchTerm]);
 
   // Paginar los resultados de búsqueda
   const paginatedResults = useMemo(() => {
@@ -67,12 +85,14 @@ export const HomePage = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
-    
-    // Solo cargar todos los Pokémon cuando hay búsqueda
-    if (newSearchTerm.trim().length > 0 && !allPokemon) {
-      refetchAll();
-    }
   };
+
+  // Efecto para activar la búsqueda básica cuando cambia el término debounced
+  useEffect(() => {
+    if (debouncedSearchTerm.trim().length > 0 && !allPokemonBasic) {
+      refetchBasic();
+    }
+  }, [debouncedSearchTerm, allPokemonBasic, refetchBasic]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -80,15 +100,14 @@ export const HomePage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (isLoading) {
+  // Loading state solo para la carga inicial de paginación
+  if (isLoadingPaginated && !searchTerm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">
-              {isSearching ? 'Buscando en todos los Pokémon...' : 'Cargando Pokémon...'}
-            </p>
+            <p className="text-gray-600 text-lg">Cargando Pokémon...</p>
           </div>
         </div>
       </div>
@@ -132,33 +151,44 @@ export const HomePage = () => {
                 className="w-full px-4 py-3 pl-12 pr-4 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                {isLoadingBasic ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                ) : (
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                )}
               </div>
             </div>
             
             {/* Search Results Info */}
             {isSearching && (
               <p className="text-sm text-gray-500 mt-2">
-                Encontrados {filteredPokemon.length} Pokémon
+                Encontrados {filteredPokemon.length} Pokémon para "{debouncedSearchTerm}"
               </p>
             )}
           </div>
         </div>
 
         {/* Pokemon Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12">
-          {paginatedResults.map((pokemon) => (
-            <PokemonCard
-              key={pokemon.id}
-              id={pokemon.id}
-              name={pokemon.name}
-              image={pokemon.image}
-              types={pokemon.types}
-            />
-          ))}
-        </div>
+        {isLoadingBasic && isSearching ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Buscando en todos los Pokémon...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12">
+            {paginatedResults.map((pokemon) => (
+              <PokemonCard
+                key={pokemon.id}
+                id={pokemon.id}
+                name={pokemon.name}
+                image={pokemon.image}
+                types={pokemon.types}
+              />
+            ))}
+          </div>
+        )}
 
         {/* No Results */}
         {filteredPokemon.length === 0 && searchTerm && (

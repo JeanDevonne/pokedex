@@ -94,6 +94,10 @@ export const PokemonCard = ({ id, name, image, types }: PokemonCardProps) => {
           alt={name}
           className="w-32 h-32 object-contain drop-shadow-lg"
           loading="lazy"
+          onError={(e) => {
+            // Imagen por defecto cuando falla la carga
+            e.currentTarget.src = 'https://cdn.pixabay.com/photo/2016/07/23/13/21/pokemon-1536855_640.png';
+          }}
         />
       </div>
 

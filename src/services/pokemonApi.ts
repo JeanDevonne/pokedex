@@ -43,6 +43,12 @@ export interface PokemonListItem {
   types: string[]
 }
 
+// Tipo para búsqueda básica (solo nombre e ID)
+export interface PokemonBasicInfo {
+  id: number
+  name: string
+}
+
 export interface PokemonListResponse {
   count: number
   next: string | null
@@ -95,7 +101,30 @@ export const getPokemonList = async (limit: number = 20, offset: number = 0): Pr
   }
 }
 
-// Función para obtener todos los Pokémon
+// Función para obtener solo información básica de todos los Pokémon (1 sola llamada)
+export const getAllPokemonBasic = async (): Promise<PokemonBasicInfo[]> => {
+  try {
+    const response = await fetch(`${BASE_URL}/pokemon?limit=1302`)
+    if (!response.ok) {
+      throw new Error('Error al obtener la lista básica de Pokémon')
+    }
+    const data: PokemonListResponse = await response.json()
+    
+    // Extraer ID de la URL y crear información básica
+    return data.results.map((pokemon, index) => {
+      const id = index + 1 // Los IDs de Pokémon son secuenciales
+      return {
+        id,
+        name: pokemon.name
+      }
+    })
+  } catch (error) {
+    console.error('Error en getAllPokemonBasic:', error)
+    throw error
+  }
+}
+
+// Función para obtener todos los Pokémon (mantener para compatibilidad)
 export const getAllPokemon = async (): Promise<PokemonListItem[]> => {
   try {
     const response = await fetch(`${BASE_URL}/pokemon?limit=1302`)

@@ -20,11 +20,6 @@ interface PokemonDetail {
     specialDefense: number;
     speed: number;
   };
-  evolutionChain?: {
-    id: number;
-    name: string;
-    image: string;
-  }[];
 }
 
 export const PokemonDetailPage: React.FC = () => {
@@ -50,7 +45,7 @@ export const PokemonDetailPage: React.FC = () => {
         name: pokemon.name,
         image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${pokemon.id}.svg`,
         types: pokemon.types.map(type => type.type.name),
-        height: pokemon.height / 10, // Convertir de decímetros a centímetros
+        height: pokemon.height * 10, // Convertir de decímetros a centímetros
         weight: pokemon.weight / 10, // Convertir de hectogramos a kilogramos
         abilities: pokemon.abilities.map(ability => ability.ability.name),
         stats: {
@@ -60,12 +55,7 @@ export const PokemonDetailPage: React.FC = () => {
           specialAttack: pokemon.stats.find(stat => stat.stat.name === 'special-attack')?.base_stat || 0,
           specialDefense: pokemon.stats.find(stat => stat.stat.name === 'special-defense')?.base_stat || 0,
           speed: pokemon.stats.find(stat => stat.stat.name === 'speed')?.base_stat || 0,
-        },
-        evolutionChain: [
-          { id: pokemonId - 1, name: 'Pre-evolution', image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${pokemonId - 1}.svg` },
-          { id: pokemonId, name: pokemon.name, image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${pokemonId}.svg` },
-          { id: pokemonId + 1, name: 'Next-evolution', image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${pokemonId + 1}.svg` },
-        ]
+        }
       };
       
       setPokemonDetail(formattedPokemon);
@@ -166,6 +156,10 @@ export const PokemonDetailPage: React.FC = () => {
                     src={pokemonDetail.image} 
                     alt={pokemonDetail.name}
                     className="w-32 h-32 object-contain drop-shadow-lg"
+                    onError={(e) => {
+                      // Imagen por defecto cuando falla la carga
+                      e.currentTarget.src = 'https://cdn.pixabay.com/photo/2016/07/23/13/21/pokemon-1536855_640.png';
+                    }}
                   />
                   {isCaptured && (
                     <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -220,7 +214,12 @@ export const PokemonDetailPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="text-sm text-gray-600">Altura</div>
-                      <div className="text-xl font-semibold text-gray-800">{pokemonDetail.height} cm</div>
+                      <div className="text-xl font-semibold text-gray-800">
+                        {pokemonDetail.height >= 100 
+                          ? `${(pokemonDetail.height / 100).toFixed(1)} m` 
+                          : `${pokemonDetail.height} cm`
+                        }
+                      </div>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="text-sm text-gray-600">Peso</div>
