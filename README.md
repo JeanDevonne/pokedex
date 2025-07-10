@@ -138,6 +138,10 @@ El proyecto no requiere variables de entorno ya que usa la API pública de Poké
 
 La aplicación utiliza la [PokeAPI](https://pokeapi.co/) que es gratuita y no requiere autenticación.
 
+### Despliegue
+
+El proyecto incluye configuración para Vercel (`vercel.json`) que maneja correctamente las rutas de React Router. Para otros proveedores, asegúrate de configurar el manejo de rutas del lado del cliente.
+
 ## 🐛 Solución de Problemas
 
 ### Error de dependencias
@@ -161,6 +165,15 @@ Si el puerto 5173 está ocupado, Vite automáticamente usará el siguiente puert
 # Verifica los tipos
 npx tsc --noEmit
 ```
+
+### Problemas de Despliegue en Vercel
+
+Si tienes problemas con el despliegue:
+
+1. Verifica que el build funcione localmente: `npm run build`
+2. Asegúrate de que el archivo `vercel.json` esté en la raíz del proyecto
+3. Verifica que la versión de Node.js en Vercel sea compatible (18+)
+4. Revisa los logs de build en el dashboard de Vercel
 
 ## 📱 Características Técnicas
 
